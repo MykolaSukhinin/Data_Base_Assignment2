@@ -1,0 +1,116 @@
+import mysql.connector
+from faker import Faker
+import random
+from tqdm import tqdm
+import time
+
+
+DB_CONFIG = {
+    'host': 'localhost',
+    'user': 'root',     
+    'password': 'MySQL_Student123',  
+    'database': 'ASSIGNMENT2_1'   
+}
+
+
+NUM_UNIVERSITIES = 1000000 # <--- ЗМІНЕНО З 10000
+NUM_TEACHERS = 1000000
+NUM_STUDENTS = 1000000
+BATCH_SIZE = 5000  # Кількість записів, що вставляються за один раз
+
+
+fake = Faker()
+
+
+COUNTRIES = ['USA', 'Ukraine', 'Germany', 'Poland', 'Canada', 'UK', 'France']
+SPECIALIZATIONS = ['Computer Science', 'Quantum Physics', 'Bioengineering', 'History', 'Mathematics', 'Chemistry']
+MAJORS = ['Psychology', 'Sociology', 'Biology', 'Theology', 'Data Science', 'Mechanical Engineering']
+
+def generate_universities(cursor, count):
+    print(f"Generating {count} universities...")
+    universities_data = []
+    for _ in tqdm(range(count)):
+        universities_data.append((
+            f"{fake.city()} University",
+            fake.city(),
+            random.choice(COUNTRIES)
+        ))
+        if len(universities_data) == BATCH_SIZE:
+            cursor.executemany("INSERT INTO universities (name, city, country) VALUES (%s, %s, %s)", universities_data)
+            universities_data = []
+    if universities_data:
+        cursor.executemany("INSERT INTO universities (name, city, country) VALUES (%s, %s, %s)", universities_data)
+
+def generate_teachers(cursor, count, university_ids):
+    print(f"Generating {count} teachers...")
+    teachers_data = []
+    for _ in tqdm(range(count)):
+        teachers_data.append((
+            fake.first_name(),
+            fake.last_name(),
+            random.choice(SPECIALIZATIONS),
+            fake.date_between(start_date='-20y', end_date='today'),
+            random.choice(university_ids)
+        ))
+        if len(teachers_data) == BATCH_SIZE:
+            cursor.executemany("INSERT INTO teachers (first_name, last_name, specialization, hire_date, university_id) VALUES (%s, %s, %s, %s, %s)", teachers_data)
+            teachers_data = []
+    if teachers_data:
+        cursor.executemany("INSERT INTO teachers (first_name, last_name, specialization, hire_date, university_id) VALUES (%s, %s, %s, %s, %s)", teachers_data)
+
+def generate_students(cursor, count, university_ids, teacher_ids):
+    print(f"Generating {count} students...")
+    students_data = []
+    for _ in tqdm(range(count)):
+        students_data.append((
+            fake.first_name(),
+            fake.last_name(),
+            random.choice(MAJORS),
+            fake.date_between(start_date='-5y', end_date='today'),
+            random.choice(university_ids),
+            random.choice(teacher_ids)
+        ))
+        if len(students_data) == BATCH_SIZE:
+            cursor.executemany("INSERT INTO students (first_name, last_name, major, enrollment_date, university_id, teacher_id) VALUES (%s, %s, %s, %s, %s, %s)", students_data)
+            students_data = []
+    if students_data:
+        cursor.executemany("INSERT INTO students (first_name, last_name, major, enrollment_date, university_id, teacher_id) VALUES (%s, %s, %s, %s, %s, %s)", students_data)
+
+def main():
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+        print("Successfully connected to the database.")
+        
+        start_time = time.time()
+
+ 
+        generate_universities(cursor, NUM_UNIVERSITIES)
+        conn.commit()
+
+
+        cursor.execute("SELECT id FROM universities")
+        university_ids = [item[0] for item in cursor.fetchall()]
+        
+        generate_teachers(cursor, NUM_TEACHERS, university_ids)
+        conn.commit()
+
+        cursor.execute("SELECT id FROM teachers")
+        teacher_ids = [item[0] for item in cursor.fetchall()]
+
+        generate_students(cursor, NUM_STUDENTS, university_ids, teacher_ids)
+        conn.commit()
+
+        end_time = time.time()
+        print(f"\nData generation completed in {end_time - start_time:.2f} seconds.")
+
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+    finally:
+        if 'conn' in locals() and conn.is_connected():
+            cursor.close()
+            conn.close()
+            print("Database connection closed.")
+
+if __name__ == '__main__':
+    main()
