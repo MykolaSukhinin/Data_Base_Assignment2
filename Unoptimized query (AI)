@@ -1,33 +1,24 @@
- EXPLAIN ANALYZE
-SELECT
+
+EXPLAIN ANALYZE
+SELECT DISTINCT 
+    t.id,
     t.first_name,
     t.last_name,
-    (SELECT name FROM universities u WHERE u.id = t.university_id) AS university_name,
-    COUNT(s.id) AS student_count
-FROM
-    students s
-JOIN
-    teachers t ON s.teacher_id = t.id
-WHERE
-    MONTH(s.enrollment_date) >= 1 
-    AND MONTH(s.enrollment_date) <= 12
-    AND YEAR(s.enrollment_date) = 2024
-    AND t.university_id IN (
-        SELECT u.id
-        FROM universities u
-        WHERE u.country = 'Poland'
-        AND u.id = t.university_id
+    t.specialization,
+    t.hire_date
+FROM teachers t
+WHERE t.id IN (
+    SELECT s.teacher_id
+    FROM students s
+    WHERE YEAR(s.enrollment_date) = 2023
+    AND s.teacher_id IN (
+        SELECT t2.id
+        FROM teachers t2
+        WHERE t2.university_id IN (
+            SELECT u.id
+            FROM universities u
+            WHERE u.country = 'Ukraine'
+        )
     )
-    AND s.teacher_id = t.id
-    AND t.id IN (
-        SELECT teacher_id 
-        FROM students 
-        WHERE YEAR(enrollment_date) = 2024
-    )
-GROUP BY
-    t.id, t.first_name, t.last_name, t.university_id
-HAVING
-    COUNT(s.id) > 0
-ORDER BY
-    student_count DESC
-LIMIT 100;
+)
+ORDER BY t.last_name, t.first_name;
