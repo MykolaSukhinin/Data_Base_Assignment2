@@ -1,0 +1,33 @@
+CREATE DATABASE ASSIGNMENT2_1;
+USE ASSIGNMENT2_1;
+DROP TABLE IF EXISTS students;
+DROP TABLE IF EXISTS teachers;
+DROP TABLE IF EXISTS universities;
+
+CREATE TABLE universities (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    city VARCHAR(50),
+    country VARCHAR(50)
+);
+
+
+CREATE TABLE teachers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    specialization VARCHAR(100),
+    hire_date DATE,
+    university_id INT 
+);
+
+
+CREATE TABLE students (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50),
+    last_name VARCHAR(50),
+    major VARCHAR(100),
+    enrollment_date DATE,
+    university_id INT, 
+    teacher_id INT     
+);
