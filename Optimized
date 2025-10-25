@@ -1,0 +1,12 @@
+-- EXPLAIN ANALYZE
+WITH stu2023 AS (SELECT  teacher_id
+FROM students
+ WHERE enrollment_date >='2023-01-01'  AND enrollment_date < '2024-01-01'),
+ukr_UNI AS (SELECT id
+FROM universities
+ WHERE country = 'Ukraine')
+SELECT  t.first_name, t.last_name, t.specialization, t.hire_date
+FROM teachers t
+JOIN ukr_UNI u ON t.university_id = u.id
+JOIN stu2023 s ON s.teacher_id = t.id
+ORDER BY t.last_name, t.first_name;
